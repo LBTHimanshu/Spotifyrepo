@@ -120,7 +120,7 @@ function refreshAccessToken() {
     refresh_token = localStorage.getItem("refresh_token");
     let body = "grant_type=refresh_token";
     body += "&refresh_token=" + refresh_token;
-    body += "&client_id=" + client_id;
+    body += "&client_id=" + clientID;
     callAuthorizationApi(body);
 }
 
@@ -168,17 +168,9 @@ function callAPI(method, url, body, callback) {
     }
 
     fetch(url, options).
-        then(res => {
-            if (res.status === 200) {
-                return res;
-            }
-            else if (res.status === 401) {
-                refreshAccessToken();
-            }
-        }).
-        then(res => res.json()).
-        then(res => callback(res)).
-        catch(error => console.log(error))
+    then(res => res.json()).
+    then(res => callback(res)).
+    catch(error => console.log(error))
 }
 
 // function to get the playlists
@@ -248,12 +240,12 @@ function play(playlistVal, trackVal) {
 
 // handle currently playing song
 function handleApiResponse() {
-    setTimeout(currentlyPlaying, 2000);
+    setTimeout(currentlyPlaying, 500);
 }
 
 // call api to play song selected in tracks
 function currentlyPlaying() {
-    callAPI("GET", PLAYER + "?market=US", null, handleCurrentlyPlayingResponse);
+    callAPI("GET", PLAYER + "?market=IN", null, handleCurrentlyPlayingResponse);
 }
 
 // handle songs.
