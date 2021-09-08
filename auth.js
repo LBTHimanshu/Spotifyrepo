@@ -13,20 +13,55 @@ const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
 const DEVICESID = "4cbb574964744b9423b533a73aaf5a6645938753";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
 
+// function to open and close playlist.
+function openPlaylist() {
+    let lightIndi = document.querySelector('div[data-pl-btn="playlist"]');
+    let playListContainer = document.querySelectorAll(".win-playlist-section");
+    playListContainer.forEach(element => {
+        let elementArray = element;
+        let containerClasses = elementArray.classList;
+        if (!containerClasses.contains('show-list')) {
+            lightIndi.style.backgroundColor = '#04d708';
+            elementArray.classList.add('show-list');
+        }
+        else if (containerClasses.contains('show-list')) {
+            lightIndi.style.backgroundColor = '#044705';
+            elementArray.classList.remove('show-list');
+        }
+    });
+
+}
+
+// function to open and close playlist.
+function listenToEvent() {
+    document.addEventListener('click', (e) => {
+        let plBtn = e.target.dataset.plBtn;
+        if (plBtn == 'playlist') {
+            openPlaylist();
+            refreshPlaylists();
+        }
+        else if (plBtn == "playlistitem"){
+            let playlistVal = e.target.value;
+            fetchTracks(playlistVal);
+        }
+    })
+}
+
 onPageLoad()
-function onPageLoad(){
-    if ( window.location.search.length > 0 ){
+function onPageLoad() {
+    listenToEvent()
+    if (window.location.search.length > 0) {
         handleRedirect();
     }
-    else{
+    else {
         access_token = localStorage.getItem("access_token");
-        if ( access_token == null ){
+        if (access_token == null) {
             // we don't have an access token so present token section
             requestAuthorization()
         }
         else {
             // we have an access token so present device section
-            refreshPlaylists();
+
             // currentlyPlaying();
         }
     }
@@ -34,17 +69,17 @@ function onPageLoad(){
 }
 
 // function to handle redirection.
-function handleRedirect(){
+function handleRedirect() {
     let code = getCode();
     fetchAccessToken(code);
     window.history.pushState("", "", redirect_uri);
 }
 
 // function to filter the auth code.
-function getCode(){
+function getCode() {
     let code = null;
     const queryString = window.location.search;
-    if(queryString.length > 0){
+    if (queryString.length > 0) {
         const urlParams = new URLSearchParams(queryString);
         code = urlParams.get('code');
     }
@@ -52,7 +87,7 @@ function getCode(){
 }
 
 // function to get the authcode.
-function requestAuthorization(){
+function requestAuthorization() {
     let url = AUTHORIZE;
     url += "?client_id=" + clientID;
     url += "&response_type=code";
@@ -61,11 +96,11 @@ function requestAuthorization(){
     url += "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
     window.location.href = url; // Show Spotify's authorization screen
 }
-// user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private
+
 // function to access the access token to call the API methods.
-function fetchAccessToken(code){
+function fetchAccessToken(code) {
     let body = "grant_type=authorization_code";
-    body += "&code=" + code; 
+    body += "&code=" + code;
     body += "&redirect_uri=" + encodeURI(redirect_uri);
     body += "&client_id=" + clientID;
     body += "&client_secret=" + clientSecret;
@@ -73,7 +108,7 @@ function fetchAccessToken(code){
 }
 
 // function to get a new token when the current one get expired.
-function refreshAccessToken(){
+function refreshAccessToken() {
     refresh_token = localStorage.getItem("refresh_token");
     let body = "grant_type=refresh_token";
     body += "&refresh_token=" + refresh_token;
@@ -81,31 +116,31 @@ function refreshAccessToken(){
     callAuthorizationApi(body);
 }
 
-function callAuthorizationApi(body){
-    
+function callAuthorizationApi(body) {
+
     let encodedIDs = btoa(clientID + ":" + clientSecret);
     let options = {
         method: 'POST',
         headers: {
             'Content-type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic ' + encodedIDs, 
+            'Authorization': 'Basic ' + encodedIDs,
         },
         body: body,
     }
 
     fetch(TOKEN, options).
-    then(res => res.json()).
-    then(res => handleAuthorizationResponse(res))
+        then(res => res.json()).
+        then(res => handleAuthorizationResponse(res))
 };
 
 // function to handle the auth tokens.
 
-function handleAuthorizationResponse(data){
-    if ( data.access_token != undefined ){
+function handleAuthorizationResponse(data) {
+    if (data.access_token != undefined) {
         access_token = data.access_token;
         localStorage.setItem("access_token", access_token);
     }
-    if ( data.refresh_token  != undefined ){
+    if (data.refresh_token != undefined) {
         refresh_token = data.refresh_token;
         localStorage.setItem("refresh_token", refresh_token);
     }
@@ -114,68 +149,90 @@ function handleAuthorizationResponse(data){
 
 
 // function for calling api's of spotify.
-function callAPI (method, url, body, callback){
+function callAPI(method, url, body, callback) {
     let options = {
         method: method,
         headers: {
             'Content-type': 'application/json',
-            'Authorization': 'Bearer ' + access_token, 
+            'Authorization': 'Bearer ' + access_token,
         },
         body: body,
     }
 
     fetch(url, options).
-    then(res => res.json()).
-    then(res => callback(res))
+        then(res => res.json()).
+        then(res => callback(res))
 }
 
 // function to get the playlists
-function refreshPlaylists(){
-    callAPI( "GET", PLAYLISTS, null, handlePlaylistsResponse );
+function refreshPlaylists() {
+    callAPI("GET", PLAYLISTS, null, handlePlaylistsResponse);
 }
 
 // function to handle playlist
-function handlePlaylistsResponse(data){
-        console.log(data);
-        removeAllItems("playlists")
-        data.items.forEach(item => addPlaylist(item));
-        document.getElementById('playlists').value=currentPlaylist;
+function handlePlaylistsResponse(data) {
+    removeAllItems("playlists")
+    data.items.forEach(item => addPlaylist(item));
+    document.getElementById('playlists').value = currentPlaylist;
 }
 
-// function to add playlists
-function addPlaylist(item){
+// function to add playlist item into DOM
+function addPlaylist(item) {
     let node = document.createElement("div");
-    node.className = "song-list";
-    node.id = "playlist"
+    node.className = "playlist-item";
+    node.setAttribute('data-pl-btn', 'playlistitem')
     node.value = item.id;
     node.innerHTML = item.name + " (" + item.tracks.total + ")";
-    document.getElementById("playlists").appendChild(node); 
+    document.getElementById("playlists").appendChild(node);
 }
 
 // function to remove playlist
-function removeAllItems( elementId ){
+function removeAllItems(elementId) {
     let node = document.getElementById(elementId);
     while (node.firstChild) {
         node.removeChild(node.firstChild);
     }
 }
 
+// function to fetch the track based on a playlist.
+function fetchTracks(val){
+    let playlist_id = val;
+    if ( playlist_id.length > 0 ){
+        url = TRACKS.replace("{{PlaylistId}}", playlist_id);
+        callAPI( "GET", url, null, handleTracksResponse );
+    }
+}
 
+// function to handle the tracks.
+function handleTracksResponse(data){
+        removeAllItems( "tracks" );
+        data.items.forEach( (item, index) => addTrack(item, index));
+}
+
+// function to add tracks into DOM.
+function addTrack(item, index){
+    let node = document.createElement("div");
+    node.value = index;
+    node.classList = 'track-item';
+    node.setAttribute('data-pl-btn', 'trackitem')
+    node.innerHTML = item.track.name + " (" + item.track.artists[0].name + ")";
+    document.getElementById("tracks").appendChild(node); 
+}
 
 // initiallizing device
 window.onSpotifyWebPlaybackSDKReady = () => {
-        // You can now initialize Spotify.Player and use the SDK
-        var player = new Spotify.Player({
-            name: "Himanshu's player",
-            getOAuthToken: callback => {
-                // Run code to get a fresh access token
-                callback(access_token);
-            },
-            volume: 0.5
-        });
-        player.connect().then(success => {
-            if (success) {
-                console.log('The Web Playback SDK successfully connected to Spotify!');
-            }
-        })
-    };
+    // You can now initialize Spotify.Player and use the SDK
+    var player = new Spotify.Player({
+        name: "Himanshu's player",
+        getOAuthToken: callback => {
+            // Run code to get a fresh access token
+            callback(access_token);
+        },
+        volume: 0.5
+    });
+    player.connect().then(success => {
+        if (success) {
+            console.log('The Web Playback SDK successfully connected to Spotify!');
+        }
+    })
+};
