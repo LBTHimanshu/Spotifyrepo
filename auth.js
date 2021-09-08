@@ -169,10 +169,10 @@ function callAPI(method, url, body, callback) {
 
     fetch(url, options).
         then(res => {
-            if(res.status === 200){
+            if (res.status === 200) {
                 return res;
             }
-            else if(res.status === 401){
+            else if (res.status === 401) {
                 refreshAccessToken();
             }
         }).
@@ -238,16 +238,12 @@ function addTrack(item, index) {
 
 // function to play songs
 function play(playlistVal, trackVal) {
-    refreshDevices()
     let body = {};
     body.context_uri = "spotify:playlist:" + playlistVal;
     body.offset = {};
     body.offset.position = trackVal > 0 ? Number(trackVal) : 0;
     body.offset.position_ms = 0;
-    if (deviceID != null) {
-        console.log('worked')
-        callAPI("PUT", PLAY + "?device_id=" + deviceID, JSON.stringify(body), handleApiResponse);
-    }
+    callAPI("PUT", PLAY + "?device_id=" + deviceID, JSON.stringify(body), handleApiResponse);
 }
 
 // handle currently playing song
@@ -265,18 +261,6 @@ function handleCurrentlyPlayingResponse(data) {
     console.log(data)
 }
 
-// function to hanldle devices.
-function refreshDevices() {
-    callAPI("GET", DEVICES, null, handleDevicesResponse);
-}
-
-function handleDevicesResponse(data) {
-    data.devices.forEach(device => {
-        if (device.name == "Himanshu's player") {
-            deviceID = device.id
-        }
-    })
-}
 
 // initiallizing device
 window.onSpotifyWebPlaybackSDKReady = () => {
@@ -294,4 +278,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
             console.log('The Web Playback SDK successfully connected to Spotify!');
         }
     })
+    player.addListener('ready', ({ device_id }) => {
+        deviceID = device_id;
+      });
 };
