@@ -6,12 +6,15 @@ const clientSecret = "160578fe6d374cd987a724c10815c2d7";
 var access_token = null;
 var refresh_token = null;
 var currentPlaylist = "";
+var deviceID = null;
 
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
 const TOKEN = "https://accounts.spotify.com/api/token";
 const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
-const DEVICESID = "4cbb574964744b9423b533a73aaf5a6645938753";
+const DEVICES = "https://api.spotify.com/v1/me/player/devices";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
+const PLAY = "https://api.spotify.com/v1/me/player/play";
+const PLAYER = "https://api.spotify.com/v1/me/player";
 
 // function to open and close playlist.
 function openPlaylist() {
@@ -34,15 +37,21 @@ function openPlaylist() {
 
 // function to open and close playlist.
 function listenToEvent() {
+    let playlistVal;
+    let trackVal;
     document.addEventListener('click', (e) => {
         let plBtn = e.target.dataset.plBtn;
         if (plBtn == 'playlist') {
             openPlaylist();
             refreshPlaylists();
         }
-        else if (plBtn == "playlistitem"){
-            let playlistVal = e.target.value;
+        else if (plBtn == "playlistitem") {
+            playlistVal = e.target.value;
             fetchTracks(playlistVal);
+        }
+        else if (plBtn == "trackitem") {
+            trackVal = e.target.value;
+            play(playlistVal, trackVal);
         }
     })
 }
@@ -61,7 +70,6 @@ function onPageLoad() {
         }
         else {
             // we have an access token so present device section
-
             // currentlyPlaying();
         }
     }
@@ -161,7 +169,8 @@ function callAPI(method, url, body, callback) {
 
     fetch(url, options).
         then(res => res.json()).
-        then(res => callback(res))
+        then(res => callback(res)).
+        catch(error => console.log(error))
 }
 
 // function to get the playlists
@@ -195,28 +204,73 @@ function removeAllItems(elementId) {
 }
 
 // function to fetch the track based on a playlist.
-function fetchTracks(val){
+function fetchTracks(val) {
     let playlist_id = val;
-    if ( playlist_id.length > 0 ){
+    if (playlist_id.length > 0) {
         url = TRACKS.replace("{{PlaylistId}}", playlist_id);
-        callAPI( "GET", url, null, handleTracksResponse );
+        callAPI("GET", url, null, handleTracksResponse);
     }
 }
 
 // function to handle the tracks.
-function handleTracksResponse(data){
-        removeAllItems( "tracks" );
-        data.items.forEach( (item, index) => addTrack(item, index));
+function handleTracksResponse(data) {
+    removeAllItems("tracks");
+    data.items.forEach((item, index) => addTrack(item, index));
 }
 
 // function to add tracks into DOM.
-function addTrack(item, index){
+function addTrack(item, index) {
     let node = document.createElement("div");
     node.value = index;
     node.classList = 'track-item';
     node.setAttribute('data-pl-btn', 'trackitem')
     node.innerHTML = item.track.name + " (" + item.track.artists[0].name + ")";
-    document.getElementById("tracks").appendChild(node); 
+    document.getElementById("tracks").appendChild(node);
+}
+
+// function to play songs
+function play(playlistVal, trackVal) {
+    refreshDevices()
+    let body = {};
+    body.context_uri = "spotify:playlist:" + playlistVal;
+    body.offset = {};
+    body.offset.position = trackVal.length > 0 ? Number(trackVal) : 0;
+    body.offset.position_ms = 0;
+    if (deviceID != null) {
+        console.log('worked')
+        callAPI("PUT", PLAY + "?device_id=" + deviceID, JSON.stringify(body), handleApiResponse);
+    }
+    else{
+        refreshDevices()
+    }
+}
+
+// handle currently playing song
+function handleApiResponse() {
+    setTimeout(currentlyPlaying, 2000);
+}
+
+// call api to play song selected in tracks
+function currentlyPlaying() {
+    callAPI("GET", PLAYER + "?market=US", null, handleCurrentlyPlayingResponse);
+}
+
+// handle songs.
+function handleCurrentlyPlayingResponse(data) {
+    console.log(data)
+}
+
+// function to hanldle devices.
+function refreshDevices() {
+    callAPI("GET", DEVICES, null, handleDevicesResponse);
+}
+
+function handleDevicesResponse(data) {
+    data.devices.forEach(device => {
+        if (device.name == "Himanshu's player") {
+            deviceID = device.id
+        }
+    })
 }
 
 // initiallizing device
