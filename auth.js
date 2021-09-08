@@ -234,7 +234,7 @@ function play(playlistVal, trackVal) {
     let body = {};
     body.context_uri = "spotify:playlist:" + playlistVal;
     body.offset = {};
-    body.offset.position = trackVal.length > 0 ? Number(trackVal) : 0;
+    body.offset.position = trackVal > 0 ? Number(trackVal) : 0;
     body.offset.position_ms = 0;
     if (deviceID != null) {
         console.log('worked')
