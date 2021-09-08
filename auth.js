@@ -11,6 +11,7 @@ const AUTHORIZE = "https://accounts.spotify.com/authorize";
 const TOKEN = "https://accounts.spotify.com/api/token";
 const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
 const DEVICESID = "4cbb574964744b9423b533a73aaf5a6645938753";
+const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
 
 onPageLoad()
 function onPageLoad(){
@@ -128,16 +129,38 @@ function callAPI (method, url, body, callback){
     then(res => callback(res))
 }
 
+// function to get the playlists
 function refreshPlaylists(){
     callAPI( "GET", PLAYLISTS, null, handlePlaylistsResponse );
 }
 
+// function to handle playlist
 function handlePlaylistsResponse(data){
         console.log(data);
-        // removeAllItems( "playlists" );
-        // data.items.forEach(item => addPlaylist(item));
-        // document.getElementById('playlists').value=currentPlaylist;
+        removeAllItems("playlists")
+        data.items.forEach(item => addPlaylist(item));
+        document.getElementById('playlists').value=currentPlaylist;
 }
+
+// function to add playlists
+function addPlaylist(item){
+    let node = document.createElement("div");
+    node.className = "song-list";
+    node.id = "playlist"
+    node.value = item.id;
+    node.innerHTML = item.name + " (" + item.tracks.total + ")";
+    document.getElementById("playlists").appendChild(node); 
+}
+
+// function to remove playlist
+function removeAllItems( elementId ){
+    let node = document.getElementById(elementId);
+    while (node.firstChild) {
+        node.removeChild(node.firstChild);
+    }
+}
+
+
 
 // initiallizing device
 window.onSpotifyWebPlaybackSDKReady = () => {
