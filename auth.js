@@ -168,6 +168,14 @@ function callAPI(method, url, body, callback) {
     }
 
     fetch(url, options).
+        then(res => {
+            if(res.status === 200){
+                return res;
+            }
+            else if(res.status === 401){
+                refreshAccessToken();
+            }
+        }).
         then(res => res.json()).
         then(res => callback(res)).
         catch(error => console.log(error))
@@ -239,9 +247,6 @@ function play(playlistVal, trackVal) {
     if (deviceID != null) {
         console.log('worked')
         callAPI("PUT", PLAY + "?device_id=" + deviceID, JSON.stringify(body), handleApiResponse);
-    }
-    else{
-        refreshDevices()
     }
 }
 
