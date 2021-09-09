@@ -10,6 +10,7 @@ var access_token = null;
 var refresh_token = null;
 var currentPlaylist = "";
 var deviceID = null;
+var player;
 
 // urls to call API's for a particular operation.
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
@@ -18,6 +19,9 @@ const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
 const DEVICES = "https://api.spotify.com/v1/me/player/devices";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
 const PLAY = "https://api.spotify.com/v1/me/player/play";
+const PAUSE = "https://api.spotify.com/v1/me/player/pause";
+const NEXT = "https://api.spotify.com/v1/me/player/next";
+const PREVIOUS = "https://api.spotify.com/v1/me/player/previous";
 const PLAYER = "https://api.spotify.com/v1/me/player";
 
 // function to open and close playlist.
@@ -77,6 +81,26 @@ function listenToEvent() {
             trackVal = e.target.value;
             // call function to play song from API.
             play(playlistVal, trackVal);
+        }
+        // check ie value is pause.
+        else if(plBtn == "pause"){
+            // call API to pause music.
+            player.pause()
+        }
+        // check ie value is play.
+        else if(plBtn == "play"){
+            // call API to pause music.
+            player.togglePlay()
+        }
+        // check ie value is next.
+        else if(plBtn == "next"){
+            // call API to next music.
+            player.nextTrack()
+        }
+        // check ie value is prev.
+        else if(plBtn == "prev"){
+            // call API to change music.
+            player.previousTrack()
         }
     })
 }
@@ -144,12 +168,6 @@ function requestAuthorization() {
     // set the url params to send a request for authorizing the APP.
     let url = AUTHORIZE + "?client_id=" + clientID + "&response_type=code" + "&redirect_uri=" + encodeURI(redirect_uri) + "&show_dialog=true" + "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
 
-    // url += "?client_id=" + clientID;
-    // url += "&response_type=code";
-    // url += "&redirect_uri=" + encodeURI(redirect_uri);
-    // url += "&show_dialog=true";
-    // url += "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
-
     // Show Spotify's authorization screen
     window.location.href = url;
 }
@@ -158,11 +176,6 @@ function requestAuthorization() {
 function fetchAccessToken(code) {
     //setup body params to send with API. 
     let body = "grant_type=authorization_code" + "&code=" + code + "&redirect_uri=" + encodeURI(redirect_uri) + "&client_id=" + clientID + "&client_secret=" + clientSecret;
-
-    // body += "&code=" + code;
-    // body += "&redirect_uri=" + encodeURI(redirect_uri);
-    // body += "&client_id=" + clientID;
-    // body += "&client_secret=" + clientSecret;
 
     // function to call auth API.
     callAuthorizationApi(body);
@@ -175,9 +188,6 @@ function refreshAccessToken() {
 
     //set body to get the new access token by using this refresh token. 
     let body = "grant_type=refresh_token" + "&refresh_token=" + refresh_token + "&client_id=" + clientID;
-
-    // body += "&refresh_token=" + refresh_token;
-    // body += "&client_id=" + clientID;
 
     //function to call auth API. 
     callAuthorizationApi(body);
@@ -244,12 +254,17 @@ function callAPI(method, url, body, callback) {
     fetch(url, options).
         then(res => {
             // check response not ok.
-            if (!res.ok) {
+            if (res.status === 401) {
                 // call refresh function to get a new function.
                 refreshAccessToken();
             }
             // check response is 204
             else if(res.status === 204){
+                // return call.
+                return;
+            }
+            // check response is 403
+            else if(res.status === 403){
                 // return call.
                 return;
             }
@@ -385,7 +400,7 @@ function handleCurrentlyPlayingResponse(data) {
 // initiallizing player.
 window.onSpotifyWebPlaybackSDKReady = () => {
     // You can now initialize Spotify.Player and use the SDK
-    const player = new Spotify.Player({
+    player = new Spotify.Player({
         name: "Himanshu's player",
         getOAuthToken: callback => {
             // Run code to get a fresh access token
@@ -418,7 +433,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     });
     // connect the player.
     player.connect().then(success => {
-        console.log(success)
         if (success) {
             console.log('The Web Playback SDK successfully connected to Spotify!');
         }
