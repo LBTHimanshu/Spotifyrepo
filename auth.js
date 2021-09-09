@@ -29,27 +29,50 @@ function openPlaylist() {
     // access the light indicator.
     let lightIndi = document.querySelector('div[data-pl-btn="playlist"]');
     // access the playlist section.
-    let playListContainer = document.querySelectorAll(".win-playlist-section");
-    // loop through the elements
-    playListContainer.forEach(element => {
-        // storing classlist.
-        let containerClasses = element.classList;
-        // check class is not present.
-        if (!containerClasses.contains('show-list')) {
-            // change the bg color of playlist btn.
-            lightIndi.style.backgroundColor = '#04d708';
-            // add the class to show the playlist.
-            element.classList.add('show-list');
-        }
-        // check if class in present.
-        else if (containerClasses.contains('show-list')) {
-            // change the color of playlist btn.
-            lightIndi.style.backgroundColor = '#044705';
-            // remove the class to hide the playlist.
-            element.classList.remove('show-list');
-        }
-    });
+    let playListContainer = document.getElementsByClassName("win-playlist-section")[0];
+    // storing classlist.
+    let containerClasses = playListContainer.classList;
 
+    // check class is not present.
+    if (!containerClasses.contains('show-list')) {
+        // change the bg color of playlist btn.
+        lightIndi.style.backgroundColor = '#04d708';
+        // add the class to show the playlist.
+        playListContainer.classList.add('show-list');
+    }
+    // check if class in present.
+    else if (containerClasses.contains('show-list')) {
+        // change the color of playlist btn.
+        lightIndi.style.backgroundColor = '#044705';
+        // remove the class to hide the playlist.
+        playListContainer.classList.remove('show-list');
+    }
+
+}
+
+// function to open trackList.
+function openTrackList(val = null) {
+    // access the light indicator.
+    let lightIndi = document.querySelector('div[data-pl-btn="track"]');
+    // access the playlist section.
+    let trackListContainer = document.getElementsByClassName("win-track-section")[0];
+    // storing classlist.
+    let containerClasses = trackListContainer.classList;
+
+    // check class is not present.
+    if (!containerClasses.contains('show-list') || val != null) {
+        // change the bg color of playlist btn.
+        lightIndi.style.backgroundColor = '#04d708';
+        // add the class to show the playlist.
+        trackListContainer.classList.add('show-list');
+    }
+    // check if class in present.
+    else if (containerClasses.contains('show-list')) {
+        // change the color of playlist btn.
+        lightIndi.style.backgroundColor = '#044705';
+        // remove the class to hide the playlist.
+        trackListContainer.classList.remove('show-list');
+    }
 }
 
 // function to listen btn events.
@@ -72,8 +95,15 @@ function listenToEvent() {
         else if (plBtn == "playlistitem") {
             // store the playlistitem value in variable
             playlistVal = e.target.value;
+            // call to open track list.
+            openTrackList(playlistVal);
             // call function to fetch the tracks.
             fetchTracks(playlistVal);
+        }
+        // check if track button is clicked
+        else if (plBtn == 'track') {
+            // call open track function.
+            openTrackList();
         }
         // check if value is trackitem.
         else if (plBtn == "trackitem") {
@@ -83,22 +113,22 @@ function listenToEvent() {
             play(playlistVal, trackVal);
         }
         // check ie value is pause.
-        else if(plBtn == "pause"){
+        else if (plBtn == "pause") {
             // call API to pause music.
             player.pause()
         }
         // check ie value is play.
-        else if(plBtn == "play"){
+        else if (plBtn == "play") {
             // call API to pause music.
             player.togglePlay()
         }
         // check ie value is next.
-        else if(plBtn == "next"){
+        else if (plBtn == "next") {
             // call API to next music.
             player.nextTrack()
         }
         // check ie value is prev.
-        else if(plBtn == "prev"){
+        else if (plBtn == "prev") {
             // call API to change music.
             player.previousTrack()
         }
@@ -126,12 +156,7 @@ function onPageLoad() {
             // request for token.
             requestAuthorization()
         }
-        else {
-            // we have an access token so present device section
-            // currentlyPlaying();
-        }
     }
-    // refreshRadioButtons();
 }
 
 // function to handle redirection.
@@ -259,12 +284,12 @@ function callAPI(method, url, body, callback) {
                 refreshAccessToken();
             }
             // check response is 204
-            else if(res.status === 204){
+            else if (res.status === 204) {
                 // return call.
                 return;
             }
             // check response is 403
-            else if(res.status === 403){
+            else if (res.status === 403) {
                 // return call.
                 return;
             }
@@ -276,7 +301,7 @@ function callAPI(method, url, body, callback) {
         // res->json. 
         then(res => {
             // check is res in undefined -> return.
-            if(res == undefined) return
+            if (res == undefined) return
             // return json.
             return res.json()
         }).
@@ -382,19 +407,15 @@ function play(playlistVal, trackVal) {
 
 // handle currently playing song
 function handleApiResponse() {
-    // play the song after time out.
-    setTimeout(currentlyPlaying, 500);
-}
-
-// call api to play song selected in tracks
-function currentlyPlaying() {
-    // call API to load player.
-    callAPI("GET", PLAYER + "?market=IN", null, handleCurrentlyPlayingResponse);
-}
-
-// handle songs.
-function handleCurrentlyPlayingResponse(data) {
-    console.log(data, "curr")
+    let tracknameBlock = document.getElementsByClassName("song-info")[0];
+    tracknameBlock.innerHTML = "";
+    // add currently playing status.
+    player.addListener('player_state_changed', ({
+        duration,
+        track_window: { current_track }
+    }) => {
+        tracknameBlock.innerHTML = current_track.name + " " + Math.floor((duration / 1000) / 60) + ":00";
+    });
 }
 
 // initiallizing player.
