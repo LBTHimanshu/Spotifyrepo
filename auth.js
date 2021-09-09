@@ -169,9 +169,19 @@ function callAPI(method, url, body, callback) {
     }
 
     fetch(url, options).
-    then(res => res.json()).
-    then(res => callback(res)).
-    catch(error => console.log(error))
+    then(res => {
+        if(!res.ok){
+            console.log(res)
+            refreshAccessToken();
+        }
+        else{
+            console.log(res)
+            return res;
+        }
+    }).
+        then(res => res.json()).
+        then(res => callback(res)).
+        catch(error => console.log(error))
 }
 
 // function to get the playlists
@@ -254,24 +264,39 @@ function handleCurrentlyPlayingResponse(data) {
     console.log(data)
 }
 
-
 // initiallizing device
-window.onSpotifyWebPlaybackSDKReady = () => {
-    // You can now initialize Spotify.Player and use the SDK
-    var player = new Spotify.Player({
-        name: "Himanshu's player",
-        getOAuthToken: callback => {
-            // Run code to get a fresh access token
-            callback(access_token);
-        },
-        volume: 0.5
-    });
-    player.connect().then(success => {
-        if (success) {
-            console.log('The Web Playback SDK successfully connected to Spotify!');
-        }
-    })
-    player.addListener('ready', ({ device_id }) => {
-        deviceID = device_id;
-      });
-};
+    window.onSpotifyWebPlaybackSDKReady = () => {
+        // You can now initialize Spotify.Player and use the SDK
+        const player = new Spotify.Player({
+            name: "Himanshu's player",
+            getOAuthToken: callback => {
+                // Run code to get a fresh access token
+               callback(access_token)
+            },
+            volume: 0.5
+        });
+        console.log(player.isLoaded)
+        player.addListener('initialization_error', ({message}) => {
+            console.log(message)
+            requestAuthorization()
+        });
+
+        player.addListener('authentication_error', ({message}) => {
+            console.log(message)
+            requestAuthorization()
+        });
+
+        player.addListener('account_error', ({message}) => {
+            console.log(message)
+            requestAuthorization()
+        });
+        player.addListener('ready', ({ device_id }) => {
+            deviceID = device_id;
+        });
+        player.connect().then(success => {
+            console.log(success)
+            if (success) {
+                console.log('The Web Playback SDK successfully connected to Spotify!');
+            }
+        })
+    };
