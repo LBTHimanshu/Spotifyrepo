@@ -414,15 +414,18 @@ function handleApiResponse() {
         duration,
         track_window: { current_track }
     }) => {
-        tracknameBlock.innerHTML = current_track.name + " " + Math.floor((duration / 1000) / 60) + ":00";
+        // convert miliseconds into seconds and add the track name + duration into DOM.
+        let minutes = Math.floor(duration / 60000);
+        let seconds = ((duration % 60000) / 1000).toFixed(0);
+        let trackDuration =  seconds == 60 ?(minutes+1) + ":00" :minutes + ":" + (seconds < 10 ? "0" : "") + seconds
+        tracknameBlock.innerHTML = `${current_track.name}  ${trackDuration}`;
     });
 }
 
 // initiallizing player.
 window.onSpotifyWebPlaybackSDKReady = () => {
-    // You can now initialize Spotify.Player and use the SDK
     player = new Spotify.Player({
-        name: "Himanshu's player",
+        name: "Winamp player",
         getOAuthToken: callback => {
             // Run code to get a fresh access token
             callback(access_token)
