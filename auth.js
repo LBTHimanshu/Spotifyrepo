@@ -81,6 +81,7 @@ function handleRedirect() {
     let code = getCode();
     fetchAccessToken(code);
     window.history.pushState("", "", redirect_uri);
+    listenToEvent()
 }
 
 // function to filter the auth code.
