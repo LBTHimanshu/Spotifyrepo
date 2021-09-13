@@ -2,8 +2,13 @@
 const redirect_uri = 'https://web-comps.webflow.io/home-himanshu';
 
 // client credentials
+// personal app
 const clientID = "230d1b5c150d40728def9abdc2f1313f";
-const clientSecret = "160578fe6d374cd987a724c10815c2d7";
+// const clientSecret = "160578fe6d374cd987a724c10815c2d7";
+
+// LBT App
+// const clientID = "85cde9a4d8674e5ab4b9289ff281151a";
+// const clientSecret = "fb87be39965d4e05aff4061591107b29";
 
 // global variables to store data.
 var access_token = null;
@@ -16,6 +21,7 @@ var player;
 const AUTHORIZE = "https://accounts.spotify.com/authorize";
 const TOKEN = "https://accounts.spotify.com/api/token";
 const PLAYLISTS = "https://api.spotify.com/v1/me/playlists";
+// const PLAYLISTS = "https://api.spotify.com/v1/browse/new-releases?country=IN";
 const DEVICES = "https://api.spotify.com/v1/me/player/devices";
 const TRACKS = "https://api.spotify.com/v1/playlists/{{PlaylistId}}/tracks";
 const PLAY = "https://api.spotify.com/v1/me/player/play";
@@ -132,18 +138,25 @@ function listenToEvent() {
             // call API to change music.
             player.previousTrack()
         }
+        // check if value is stop.
+        else if(plBtn === "stop"){
+            // seek the track position to 0 and then pause it.
+            player.seek(0*1000).then(() => {
+                player.pause();
+            })
+        }
     })
 }
 
 // on page load first function to load.
 onPageLoad()
 
+listenToEvent()
 // function to check access token, call eventlistener function and requestAuth function.
 function onPageLoad() {
     // call to eventlistener
-    listenToEvent()
     // check if url search length is greater than 0.
-    if (window.location.search.length > 0) {
+    if (window.location.hash.length > 0) {
         // call handleRedirect function.
         handleRedirect();
     }
@@ -164,7 +177,8 @@ function handleRedirect() {
     // filter out the auth code which is present in url by calling getCode.
     let code = getCode();
     // call fetchAccessToken to get the access token by calling API.
-    fetchAccessToken(code);
+    // fetchAccessToken(code);
+    handleAuthorizationResponse(code);
     // on redirection set the url to redirect uri.
     window.history.pushState("", "", redirect_uri);
     // call the eventlistener.
@@ -176,13 +190,14 @@ function getCode() {
     // variable to store the auth code.
     let code = null;
     // filtering the search query from the url.
-    const queryString = window.location.search;
+    const queryString = window.location.hash;
+    // console.log(queryString)
     // check the lenght of querystring.
     if (queryString.length > 0) {
         // store the url params.
         const urlParams = new URLSearchParams(queryString);
         // store the code from the params.
-        code = urlParams.get('code');
+        code = urlParams.get('#access_token');
     }
     // return code.
     return code;
@@ -191,75 +206,75 @@ function getCode() {
 // function to request for the authcode.
 function requestAuthorization() {
     // set the url params to send a request for authorizing the APP.
-    let url = AUTHORIZE + "?client_id=" + clientID + "&response_type=code" + "&redirect_uri=" + encodeURI(redirect_uri) + "&show_dialog=true" + "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
+    let url = AUTHORIZE + "?client_id=" + clientID + "&response_type=token" + "&redirect_uri=" + encodeURI(redirect_uri) + "&show_dialog=true" + "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private";
 
     // Show Spotify's authorization screen
     window.location.href = url;
 }
 
 // function to access the access token to call the API methods.
-function fetchAccessToken(code) {
-    //setup body params to send with API. 
-    let body = "grant_type=authorization_code" + "&code=" + code + "&redirect_uri=" + encodeURI(redirect_uri) + "&client_id=" + clientID + "&client_secret=" + clientSecret;
+// function fetchAccessToken(code) {
+//     //setup body params to send with API. 
+//     let body = "grant_type=authorization_code" + "&code=" + code + "&redirect_uri=" + encodeURI(redirect_uri)
 
-    // function to call auth API.
-    callAuthorizationApi(body);
-}
+//     // function to call auth API.
+//     callAuthorizationApi(body);
+// }
 
 // function to get a new token when the current one get expired.
-function refreshAccessToken() {
-    // access the refresh token from the LocalStorage.
-    refresh_token = localStorage.getItem("refresh_token");
+// function refreshAccessToken() {
+//     // access the refresh token from the LocalStorage.
+//     refresh_token = localStorage.getItem("refresh_token");
 
-    //set body to get the new access token by using this refresh token. 
-    let body = "grant_type=refresh_token" + "&refresh_token=" + refresh_token + "&client_id=" + clientID;
+//     //set body to get the new access token by using this refresh token. 
+//     let body = "grant_type=refresh_token" + "&refresh_token=" + refresh_token + "&client_id=" + clientID;
 
-    //function to call auth API. 
-    callAuthorizationApi(body);
-}
+//     //function to call auth API. 
+//     callAuthorizationApi(body);
+// }
 
 // function to call Auth API to get the access token and refresh token.
-function callAuthorizationApi(body) {
-    // encoding clientID and clientSecret into 64bit format.
-    let encodedIDs = btoa(clientID + ":" + clientSecret);
-    // setting the params to call API
-    let options = {
-        method: 'POST',
-        headers: {
-            'Content-type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Basic ' + encodedIDs,
-        },
-        body: body,
-    }
+// function callAuthorizationApi(body) {
+//     // encoding clientID and clientSecret into 64bit format.
+//     let encodedIDs = btoa(clientID + ":" + clientSecret);
+//     // setting the params to call API
+//     let options = {
+//         method: 'POST',
+//         headers: {
+//             'Content-type': 'application/x-www-form-urlencoded',
+//             'Authorization': 'Basic ' + encodedIDs,
+//         },
+//         body: body,
+//     }
 
-    // calling the API.
-    fetch(TOKEN, options).
-        // res -> json.
-        then(res => res.json()).
-        // res -> function to handle the response params.
-        then(res => handleAuthorizationResponse(res)).
-        // error -> console.
-        catch(error => console.log(error))
-};
+//     // calling the API.
+//     fetch(TOKEN, options).
+//         // res -> json.
+//         then(res => res.json()).
+//         // res -> function to handle the response params.
+//         then(res => handleAuthorizationResponse(res)).
+//         // error -> console.
+//         catch(error => console.log(error))
+// };
 
 // function to handle the res.
-function handleAuthorizationResponse(data) {
+function handleAuthorizationResponse(access_token_val) {
     // check is access token in not undefined.
-    if (data.access_token != undefined) {
+    if (access_token_val != undefined) {
         // store the access token into variable.
-        access_token = data.access_token;
+        access_token = access_token_val;
         // store the token into localstorage
         localStorage.setItem("access_token", access_token);
     }
     // check is refresh token in not undefined.
-    if (data.refresh_token != undefined) {
-        // store the refresh token into variable.
-        refresh_token = data.refresh_token;
-        // store the token into localstorage
-        localStorage.setItem("refresh_token", refresh_token);
-    }
+    // if (data.refresh_token != undefined) {
+    //     // store the refresh token into variable.
+    //     refresh_token = data.refresh_token;
+    //     // store the token into localstorage
+    //     localStorage.setItem("refresh_token", refresh_token);
+    // }
     // call pageload.
-    onPageLoad();
+    listenToEvent();
 }
 
 
@@ -319,10 +334,12 @@ function refreshPlaylists() {
 
 // function to handle playlist
 function handlePlaylistsResponse(data) {
+    console.log(data)
+    data = data.items;
     // call to remove the old playlist from table.
     removeAllItems("playlists")
     // loop through the data to get items and send them into addplaylist function.
-    data.items.forEach(item => addPlaylist(item));
+    data.forEach(item => addPlaylist(item));
     // set the playlist to empty.
     document.getElementById('playlists').value = currentPlaylist;
 }
@@ -377,18 +394,23 @@ function handleTracksResponse(data) {
 
 // function to add tracks into DOM.
 function addTrack(item, index) {
-    // create a div.
-    let node = document.createElement("div");
-    // set value to index.
-    node.value = index;
-    // set class.
-    node.classList = 'track-item';
-    // set attribute.
-    node.setAttribute('data-pl-btn', 'trackitem')
-    // set inerHTML
-    node.innerHTML = item.track.name + " (" + item.track.artists[0].name + ")";
-    // append track into tracks container.
-    document.getElementById("tracks").appendChild(node);
+    // check if tracks and index is not null and not undefined.
+    if (item!== null && index !== undefined) {
+        if (item.track !== null) {
+            // create a div.
+            let node = document.createElement("div");
+            // set value to index.
+            node.value = index;
+            // set class.
+            node.classList = 'track-item';
+            // set attribute.
+            node.setAttribute('data-pl-btn', 'trackitem')
+            // set inerHTML
+            node.innerHTML = item.track.name + " (" + item.track.artists[0].name + ")";
+            // append track into tracks container.
+            document.getElementById("tracks").appendChild(node);
+        }
+    }
 }
 
 // function to play songs
